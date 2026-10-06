@@ -150,6 +150,37 @@ def minimax_alpha_beta(state, depth, alpha, beta, maximizing_player):
                 break
         return min_eval, best_action
 
+# Track nodes for plain Minimax
+plain_nodes_explored = 0
+
+def minimax_plain(state, depth, maximizing_player):
+    global plain_nodes_explored
+    plain_nodes_explored += 1
+    
+    terminal, _ = state.is_terminal()
+    if depth == 0 or terminal:
+        return evaluate(state), None
+        
+    best_action = None
+    if maximizing_player:
+        max_eval = -math.inf
+        for action in state.get_legal_actions():
+            child_state = state.apply_action(action)
+            eval_score, _ = minimax_plain(child_state, depth - 1, False)
+            if eval_score > max_eval:
+                max_eval = eval_score
+                best_action = action
+        return max_eval, best_action
+    else:
+        min_eval = math.inf
+        for action in state.get_legal_actions():
+            child_state = state.apply_action(action)
+            eval_score, _ = minimax_plain(child_state, depth - 1, True)
+            if eval_score < min_eval:
+                min_eval = eval_score
+                best_action = action
+        return min_eval, best_action
+
 def get_arrow(heading):
     arrows = {
         0: '>', 45: '/', 90: '^', 135: '\\',
@@ -220,17 +251,26 @@ if __name__ == "__main__":
             
         print(f"--- Turn {current_state.t}, Player {current_state.current_turn} to move ---")
         
-        nodes_explored = 0
-        start_time = time.time()
-        
+        # 1. Run Plain Minimax (No Pruning)
+        plain_nodes_explored = 0
+        t0 = time.time()
         is_max = (current_state.current_turn == 'A')
+        val_plain, act_plain = minimax_plain(current_state, search_depth, is_max)
+        t_plain = time.time() - t0
+        
+        # 2. Run Minimax with Alpha-Beta Pruning
+        nodes_explored = 0
+        t0 = time.time()
         val, best_act = minimax_alpha_beta(current_state, search_depth, -math.inf, math.inf, is_max)
+        t_ab = time.time() - t0
         
-        end_time = time.time()
+        pruning_pct = ((plain_nodes_explored - nodes_explored) / plain_nodes_explored * 100.0) if plain_nodes_explored > 0 else 0.0
         
-        print(f"Nodes explored: {nodes_explored} in {end_time-start_time:.3f}s")
-        print(f"Evaluation Score: {val:.2f}")
-        print(f"Chosen Action: {action_to_str(best_act)} ({best_act}°)")
+        print(f"Algorithm Comparison at Search Depth {search_depth}:")
+        print(f"  Standard Minimax : {plain_nodes_explored:5d} nodes explored | Time: {t_plain:.4f}s | Value: {val_plain:.2f}")
+        print(f"  Alpha-Beta Minimax: {nodes_explored:5d} nodes explored | Time: {t_ab:.4f}s | Value: {val:.2f}")
+        print(f"  --> Alpha-Beta Pruned {pruning_pct:.1f}% of search tree!")
+        print(f"Chosen Action: {action_to_str(best_act)} ({best_act}°)\n")
         
         current_state = current_state.apply_action(best_act)
         
