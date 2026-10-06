@@ -150,6 +150,29 @@ def minimax_alpha_beta(state, depth, alpha, beta, maximizing_player):
                 break
         return min_eval, best_action
 
+def get_arrow(heading):
+    arrows = {
+        0: '>', 45: '/', 90: '^', 135: '\\',
+        180: '<', 225: '/', 270: 'v', 315: '\\'
+    }
+    return arrows.get(heading, '?')
+
+def print_grid(state):
+    print("\nGrid Visualization (Jet A, Jet B):")
+    # Header row with 2 spaces per number
+    print("   " + "".join([f"{x:02d}" for x in range(GRID_W)]))
+    for y in range(GRID_H - 1, -1, -1):
+        row_str = f"{y:02d} "
+        for x in range(GRID_W):
+            if x == state.xA and y == state.yA:
+                row_str += f"A{get_arrow(state.hA)}"
+            elif x == state.xB and y == state.yB:
+                row_str += f"B{get_arrow(state.hB)}"
+            else:
+                row_str += ". "
+        print(row_str)
+    print("")
+
 def action_to_str(act):
     if act == 0: return "Hold"
     if act == -45: return "Turn Right"
@@ -161,23 +184,38 @@ if __name__ == "__main__":
     print("Tactical Dogfight Pathing - AI Engine Execution")
     print("==================================================\n")
     
-    # Initialize real test case
-    # Jet A starts at (2, 2) facing Right (0 deg)
-    # Jet B starts at (15, 15) facing Left (180 deg)
-    initial_state = GameState(xA=2, yA=2, hA=0, xB=15, yB=15, hB=180, t=0, current_turn='A')
+    choice = input("Press ENTER to use default scenario, or type 'custom' to enter your own: ").strip().lower()
+    
+    if choice == 'custom':
+        try:
+            xA = int(input(f"Jet A X pos (0-{GRID_W-1}): "))
+            yA = int(input(f"Jet A Y pos (0-{GRID_H-1}): "))
+            hA = int(input("Jet A Heading (0,45,90,135,180,225,270,315): "))
+            xB = int(input(f"Jet B X pos (0-{GRID_W-1}): "))
+            yB = int(input(f"Jet B Y pos (0-{GRID_H-1}): "))
+            hB = int(input("Jet B Heading (0,45,90,135,180,225,270,315): "))
+            initial_state = GameState(xA, yA, hA, xB, yB, hB, 0, 'A')
+        except ValueError:
+            print("Invalid input, falling back to default scenario...")
+            initial_state = GameState(xA=2, yA=2, hA=0, xB=15, yB=15, hB=180, t=0, current_turn='A')
+    else:
+        # Default test case
+        initial_state = GameState(xA=2, yA=2, hA=0, xB=15, yB=15, hB=180, t=0, current_turn='A')
     
     search_depth = 5 # 5 plies (A -> B -> A -> B -> A)
     current_state = initial_state
     
-    print(f"Starting Conditions:")
+    print(f"\nStarting Conditions:")
     print(f"Jet A: pos({current_state.xA},{current_state.yA}) heading {current_state.hA}°")
     print(f"Jet B: pos({current_state.xB},{current_state.yB}) heading {current_state.hB}°")
-    print(f"Weapons Range: {WEAPONS_RANGE}, Firing Cone: {FIRING_CONE_ANGLE}°\n")
+    print(f"Weapons Range: {WEAPONS_RANGE}, Firing Cone: {FIRING_CONE_ANGLE}°")
+    
+    print_grid(current_state)
     
     while True:
         term, winner = current_state.is_terminal()
         if term:
-            print(f"\nGame Over! Result: {'Jet A Wins!' if winner == 'A' else 'Jet B Wins!' if winner == 'B' else 'Draw'}")
+            print(f"Game Over! Result: {'Jet A Wins!' if winner == 'A' else 'Jet B Wins!' if winner == 'B' else 'Draw'}")
             break
             
         print(f"--- Turn {current_state.t}, Player {current_state.current_turn} to move ---")
@@ -198,8 +236,9 @@ if __name__ == "__main__":
         
         if current_state.current_turn == 'B':
             print(f"Jet A updated state: pos({current_state.xA},{current_state.yA}) heading {current_state.hA}°\n")
+            time.sleep(1.0) # Delay after Jet A moves
         else:
             print(f"Jet B updated state: pos({current_state.xB},{current_state.yB}) heading {current_state.hB}°\n")
-            
-        # Optional: break after a few turns if you just want to show it running
-        # if current_state.t >= 5: break
+            # Print the grid after both have moved (i.e., at the start of a new full turn)
+            print_grid(current_state)
+            time.sleep(1.5) # Longer delay after the full turn finishes
