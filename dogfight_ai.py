@@ -31,13 +31,13 @@ def get_angle_diff(a1, a2):
 
 class GameState:
     def __init__(self, xA, yA, hA, xB, yB, hB, t, current_turn='A'):
-        self.xA = xA
+        self.xA = xA #positions
         self.yA = yA
-        self.hA = hA
+        self.hA = hA #heading
         self.xB = xB
         self.yB = yB
         self.hB = hB
-        self.t = t
+        self.t = t #turn number
         self.current_turn = current_turn  # 'A' or 'B'
         
     def is_terminal(self):
